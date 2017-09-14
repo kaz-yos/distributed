@@ -1,4 +1,3 @@
-* Meta-data :noexport:
 #+TITLE: Overview of the distributed package
 #+AUTHOR: Kazuki Yoshida
 #+OPTIONS: toc:nil
