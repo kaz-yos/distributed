@@ -1,0 +1,31 @@
+Package: distributed
+Type: Package
+Title: Examine Privacy Preserving Data Analysis Methods in Simulated Distributed Data Network
+Version: 0.1.0
+Date: 2017-01-27
+Author: Kazuki Yoshida
+Maintainer: Kazuki Yoshida <kazukiyoshida@mail.harvard.edu>
+Description: Simulate a distributed data network and examine performance of various privacy preserving data analysis methods. See the package vignette for instructions.
+License: GPL-2
+Imports:
+    magrittr,
+    dplyr,
+    tidyr,
+    assertthat,
+    doRNG,
+    foreach,
+    geepack,
+    tableone,
+    Matching,
+    survival,
+    sandwich,
+    survey,
+    gnm,
+    pryr
+Suggests:
+    testthat,
+    knitr,
+    MatchIt
+URL:
+VignetteBuilder: knitr
+RoxygenNote: 6.0.1

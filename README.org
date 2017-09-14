@@ -1,0 +1,159 @@
+* Meta-data :noexport:
+#+TITLE: Overview of the distributed package
+#+AUTHOR: Kazuki Yoshida
+#+OPTIONS: toc:nil
+#+OPTIONS: ^:{}
+# ############################################################################ #
+
+* Introduction
+
+In distributed data networks such as the Sentinel and PCORnet, minimizing the amount of data shared across data partners is important for reducing the danger of potential privacy breach. In this simulation project, we examined the performance of data analysis methods at various levels of data sharing such as meta-analysis, summary table data, risk set data, and individual-level data. The preliminary version of the results can be found in the presentation slides (https://www.slideshare.net/secret/N8b6PF07w1Yyci).
+
+
+* System Requirement
+
+Running the entire simulation requires working installation of =R= as well as UNIX SAS that can be called via =sas= command. Most part of the simulation is in pure R, but the experimental weighted risk set analysis is implemented in SAS. When the sas command is not found, this part of simulation is skipped gracefully.
+
+
+* Installation
+
+The package can be installed as follows from the shell if you have an archive file. If it asks for dependencies, you may need to install these required packages first.
+
+#+BEGIN_SRC sh
+R CMD install distributed_0.1.0.tar.gz
+#+END_SRC
+
+Another way to install the package is to directly install from Github within =R=.
+
+#+BEGIN_SRC R
+## Install devtools (if you do not have it already)
+install.packages("devtools")
+## Install directly from github (develop branch)
+devtools::install_github(repo = "kaz-yos/distributed")
+#+END_SRC
+
+Using devtools may requires some preparation, please see the following link for information.
+
+http://www.rstudio.com/projects/devtools/
+
+
+* Overview of Package Contents
+
+The distributed package contains the functions used to generate, prepare, and analyze data. It also contains script files that are used to run the simulation study.
+
+The functions can be loaded in =R= using =library(distributed)=. The scripts are found in the package folder as =scripts.zip=. For example, in the latest =R= on macOS, it is found in the following path. Please copy this file somewhere convenient and unarchive.
+
+#+BEGIN_EXAMPLE
+/Library/Frameworks/R.framework/Versions/3.3/Resources/library/distributed/scripts.zip
+#+END_EXAMPLE
+
+The unarchived folder contains the following =R= and shell scripts as well as subfolders.
+
+#+BEGIN_EXAMPLE
+./scripts
+├── 01.GenerateData.R
+├── 01.GenerateData_Lsf.sh
+├── 01.GenerateData_Slurm.sh
+├── 02.PrepareData.R
+├── 02.PrepareData_Lsf.sh
+├── 02.PrepareData_Slurm.sh
+├── 03.AnalyzeData.R
+├── 03.AnalyzeData_Lsf.sh
+├── 03.AnalyzeData_Slurm.sh
+├── 04.AssessMethods.R
+├── data
+├── log
+├── log_lsf
+├── log_slurm
+└── summary
+#+END_EXAMPLE
+
+
+* Running Simulation
+
+The simulation has four distinct phases as evident from the numbering of script file names.
+
+- Data Generation
+- Data Preparation
+- Data Analysis
+- Method Assessment
+
+
+** Data Generation
+
+Running the following will generate files containing simulated distributed data network under the data subfolder. The 4 at the end of the command specifies the number of CPU cores to use.
+
+#+BEGIN_SRC sh
+Rscript 01.GenerateData.R 4
+#+END_SRC
+
+Multiple files are generated for each scenario to lessen the resource requirement. Each new file generated under the data subfolder has a name such as =ScenarioRaw001_part001_R50.RData=, where first number indicates the scenario, part number indicates which part it is in a series of files under this scenario, and =R50= indicates the number of iterations included in the file.
+
+If you are running the simulation in a Linux cluster environment with job managers, the following scripts can aid dispatching the data generation job to a node. These shell scripts are designed for the Harvard University's Odyssey cluster (SLURM job manager) and Harvard Medical School's Orchestra cluster (LSF). Thus, these script will require modification according to the configuration of the cluster system you are using.
+
+For a LSF-based system:
+
+#+BEGIN_SRC sh
+sh 01.GenerateData_Lsf.sh
+#+END_SRC
+
+For a SLURM-based system:
+
+#+BEGIN_SRC sh
+sh 01.GenerateData_Slurm.sh
+#+END_SRC
+
+
+** Data Preparation
+
+This step fits summary score models in the data and performs matching, stratification, and weighting by these estimated summary scores. Conceptually, this part corresponds to what each site does in a distributed data network. The process has to be run on each data file as follows. The 4 at the end of the command specifies the number of CPU cores to use.
+
+#+BEGIN_SRC sh
+Rscript 02.PrepareData.R ./data/ScenarioRaw001_part001_R50.RData 4
+#+END_SRC
+
+This will generate a new file named =ScenarioPrepared001_part001_R50.RData= under the data subfolder. This process can be repeated for each file via for loop, but it is better suited for a cluster system. The following scripts dispatch the data preparation job on each file to a separate node, thereby, allowing highly parallel execution. Again the files included are specialized for the clusters the authors used, and need modification before use at a different system.
+
+For a LSF-based system:
+
+#+BEGIN_SRC sh
+sh 02.PrepareData_Lsf.sh ./data/ScenarioRaw*
+#+END_SRC
+
+For a SLURM-based system:
+
+#+BEGIN_SRC sh
+sh 02.PrepareData_Slurm.sh ./data/ScenarioRaw*
+#+END_SRC
+
+
+** Data Analysis
+
+This step conducts the actual analysis of prepared data for the treatment effect of interest. The process has to be run on each data file as follows. The 4 at the end of the command specifies the number of CPU cores to use.
+
+#+BEGIN_SRC sh
+Rscript 03.AnalyzeData.R ./data/ScenarioPrepared001_part001_R50.RData 4
+#+END_SRC
+
+This will generate a new file named =ScenarioAnalyzed001_part001_R50.RData= under the data subfolder. Again this can be repeated using a for loop or dispatched to multiple nodes in a cluster system.
+
+For a LSF-based system:
+#+BEGIN_SRC sh
+ 03.AnalyzeData_Lsf.sh ./data/ScenarioPrepared*
+#+END_SRC
+
+For a SLURM-based system:
+#+BEGIN_SRC sh
+ 03.AnalyzeData_Slurm.sh ./data/ScenarioPrepared*
+#+END_SRC
+
+
+** Method Assessment
+
+This step aggregates the analysis results and examine performance metrics for each method. The following will load all data files with names containing =ScenarioAnalyzed= (analysis result files), and output assessment results in the summary subfolder.
+
+#+BEGIN_SRC sh
+Rscript 04.AssessMethods.R
+#+END_SRC
+
+This part is not so computationally intensive, so it can be conducted on a local computer easily even if you are using a cluster for other steps.
