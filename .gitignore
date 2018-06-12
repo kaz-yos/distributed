@@ -1,6 +1,5 @@
 *.DS_Store
 *~
-*.zip
 *.tar.gz
 .Rhistory
 .tramp_history
