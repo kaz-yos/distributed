@@ -34,10 +34,11 @@ survParams <- c(lambda, lambda_c, Tmax)
 ## Duplicates
 K <- 3
 ## Generate 3-center list differing in sizes only
-lstDf <- GenerateDistResNet(lstN          = as.list(seq_len(K) * n),
-                          lstAlphas     = rep(list(c(alpha0, alphaX)), K),
-                          lstBetas      = rep(list(c(beta0, betaX, betaA, betaXA)), K),
-                          lstSurvParams = rep(list(survParams), K))
+lstDf <- GenerateDistResNet(lstN = as.list(seq_len(K) * n),
+                            lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
+                            lstAlphas = rep(list(c(alpha0, alphaX)), K),
+                            lstBetas = rep(list(c(beta0, betaX, betaA, betaXA)), K),
+                            lstSurvParams = rep(list(survParams), K))
 ## Prepare helper variables
 set.seed(20160701)
 lstSites <- lapply(lstDf, SitePrepareHelperVariables)

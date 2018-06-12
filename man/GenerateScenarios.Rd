@@ -4,18 +4,21 @@
 \alias{GenerateScenarios}
 \title{Generate Scenarios object containing multiple DRN scenarios.}
 \usage{
-GenerateScenarios(lstLstN, lstLstAlphas, lstLstBetas, lstLstSurvParams, mix)
+GenerateScenarios(lstLstN, lstLstAssignCovariates, lstLstAlphas, lstLstBetas,
+  lstLstSurvParams, mix)
 }
 \arguments{
 \item{lstLstN}{list of lists of sample sizes}
 
-\item{lstLstAlphas}{list of lists of alpha parameters}
+\item{lstLstAlphas}{list of lists of covariate generating functions}
 
 \item{lstLstBetas}{list of lists of beta parameters}
 
 \item{lstLstSurvParams}{list of lists of survival parameters}
 
 \item{mix}{whether to mix parameter sets. If FALSE, the first parameter sets for all domains are combined as the first scenario, etc. The parameter set has to be of the same length in this case.}
+
+\item{lstLstAlphas}{list of lists of alpha parameters}
 }
 \value{
 Scenarios object, which is a list of ScenarioDistResNet objects. Each ScenarioDistResNet a parameter set for a single scenario.

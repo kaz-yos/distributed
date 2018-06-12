@@ -43,6 +43,7 @@ lambda_c <- 0.5
 Tmax     <- 1
 ## Generate dataset
 df1 <- GenerateOneCenter(n = n,
+                         AssignCovariates = AssignCovariatesNormBinDefault,
                          alphas = c(alpha0, alphaX),
                          betas = c(beta0, betaX, betaA, betaXA),
                          survParams = c(lambda, lambda_c, Tmax))
@@ -60,6 +61,7 @@ df_prep1_NA[,c("ePsMatch", "eDrsBMatch", "eDrsSMatch")] <- 0
 
 ## Generate data where model fitting fail
 df_rare_tx <- GenerateOneCenter(n = n,
+                                AssignCovariates = AssignCovariatesNormBinDefault,
                                 alphas = c(-10, alphaX),
                                 betas = c(beta0, betaX, betaA, betaXA),
                                 survParams = c(lambda, lambda_c, Tmax))
@@ -71,6 +73,7 @@ df_rare_tx <- subset(df_rare_tx, A == 0)
 
 ## Rare outcome
 df_rare_dis <- GenerateOneCenter(n = 2*10^4,
+                                 AssignCovariates = AssignCovariatesNormBinDefault,
                                  alphas = c(alpha0 = -0.85, alphaX = 0.7 * seq(log(0.2), log(5), length.out = 7)),
                                  betas = c(beta0 = -10.0,
                                            betaX = 0.5 * seq(log(0.2), log(5), length.out = 7),
@@ -89,7 +92,8 @@ test_that("estimated weights are reasonable", {
     ## Max 1 for matching weight
     expect_equal(max(df_prep1$ePsMw), 1)
     ## Mean stabilized IPTW should be around 1
-    expect_equal(round(mean(df_prep1$ePsSIptw), 5), 1)
+    expect_equal(mean(df_prep1$ePsSIptw), 1,
+                 tolerance = 10^(-5))
 
 })
 
@@ -365,6 +369,7 @@ test_that("dataset is prepared correctly", {
 
     ## 8 Covariates
     df2 <- GenerateOneCenter(n = n,
+                             AssignCovariates = AssignCovariatesNormBinDefault,
                              alphas = c(alpha0, c(alphaX,0)),
                              betas = c(beta0, c(betaX,0), betaA, c(betaXA,0)),
                              survParams = c(lambda, lambda_c, Tmax))
@@ -377,6 +382,7 @@ test_that("dataset is prepared correctly", {
 
     ## 6 Covariates
     df3 <- GenerateOneCenter(n = n,
+                             AssignCovariates = AssignCovariatesNormBinDefault,
                              alphas = c(alpha0, alphaX[-1]),
                              betas = c(beta0, betaX[-1], betaA, betaXA[-1]),
                              survParams = c(lambda, lambda_c, Tmax))

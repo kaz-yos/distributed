@@ -16,7 +16,7 @@ set.seed(20160505)
 mean1 <- 0
 sd1   <- 1
 pp    <- seq(0.1, 0.6, 0.1)
-dfX   <- AssignCovariates(n = 10^4, mean1 = mean1, sd1 = sd1, pp = pp)
+dfX   <- AssignCovariatesNormBin(n = 10^4, mean1 = mean1, sd1 = sd1, pp = pp)
 cat("\n")
 print(head(dfX, 20))
 
@@ -199,6 +199,7 @@ test_that("A single center is generated correctly (also table generation)", {
 
     ## Data generation
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(0,7)),
                             betas = c(beta0 = 0,
@@ -219,6 +220,7 @@ test_that("A single center is generated correctly (also table generation)", {
     expect_true("data.frame" %in% class(df))
     expect_equal(attr(df, "ScenarioResSite"),
                  list(n = 10^5,
+                      AssignCovariates = AssignCovariatesNormBinDefault,
                       alphas = c(alpha0 = 0,
                                  alphaX = rep(0,7)),
                       betas = c(beta0 = 0,
@@ -231,6 +233,7 @@ test_that("A single center is generated correctly (also table generation)", {
     ## Different covariate counts
     p <- 16
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(0,p)),
                             betas = c(beta0 = 0,
@@ -248,6 +251,7 @@ test_that("A single center is generated correctly (also table generation)", {
 
     ## Data generation and tabling
     tab <- GenerateOneCenterTable(n = 10^5,
+                                  AssignCovariates = AssignCovariatesNormBinDefault,
                                   alphas = c(alpha0 = 0,
                                              alphaX = rep(0,7)),
                                   betas = c(beta0 = 0,
@@ -269,6 +273,7 @@ test_that("Check data generation under various scenarios", {
 
     ## Randomized treatment and outcome
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(0,7)),
                             betas = c(beta0 = 0,
@@ -287,6 +292,7 @@ test_that("Check data generation under various scenarios", {
 
     ## All covariates are instruments (positive association)
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(1,7)),
                             betas = c(beta0 = 0,
@@ -302,6 +308,7 @@ test_that("Check data generation under various scenarios", {
 
     ## All covariates are instruments (negative association)
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(-1,7)),
                             betas = c(beta0 = 0,
@@ -315,6 +322,7 @@ test_that("Check data generation under various scenarios", {
 
     ## All covariates are predictors (positive association)
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(0,7)),
                             betas = c(beta0 = 0,
@@ -328,6 +336,7 @@ test_that("Check data generation under various scenarios", {
 
     ## All covariates are predictors (positive association)
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(0,7)),
                             betas = c(beta0 = 0,
@@ -341,6 +350,7 @@ test_that("Check data generation under various scenarios", {
 
     ## All covariates are confounders (positive association); treatment protective
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(1,7)),
                             betas = c(beta0 = 0,
@@ -367,6 +377,7 @@ test_that("Check data generation under various scenarios", {
 
     ## All covariates are confounders (positive association); treatment harmful
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(1,7)),
                             betas = c(beta0 = 0,
@@ -396,6 +407,7 @@ test_that("Check data generation under various scenarios", {
     ## of disease (by X5) that affects assessment of effect heterogeneity on the
     ## bounded natural scale ([0,1] for probability; [0,Inf] for rate).
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(1,7)),
                             betas = c(beta0 = 0,
@@ -415,6 +427,7 @@ test_that("Check data generation under various scenarios", {
     ## of disease (by X5) that affects assessment of effect heterogeneity on the
     ## bounded natural scale ([0,1] for probability; [0,Inf] for rate).
     df <- GenerateOneCenter(n = 10^5,
+                            AssignCovariates = AssignCovariatesNormBinDefault,
                             alphas = c(alpha0 = 0,
                                        alphaX = rep(1,7)),
                             betas = c(beta0 = 0,
@@ -455,9 +468,10 @@ test_that("Multiple centers are generated correctly", {
     ## Duplicates
     K <- 3
 
-    lstDf <- GenerateDistResNet(lstN          = rep(list(n), K),
-                                lstAlphas     = rep(list(c(alpha0, alphaX)), K),
-                                lstBetas      = rep(list(c(beta0, betaX, betaA, betaXA)), K),
+    lstDf <- GenerateDistResNet(lstN = rep(list(n), K),
+                                lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
+                                lstAlphas = rep(list(c(alpha0, alphaX)), K),
+                                lstBetas = rep(list(c(beta0, betaX, betaA, betaXA)), K),
                                 lstSurvParams = rep(list(survParams), K))
 
     expect_true(length(lstDf) == K)
@@ -470,9 +484,10 @@ test_that("Multiple centers are generated correctly", {
     ## Scenario parameters are kept as an attribute
     expect_equal(attr(lstDf, "ScenarioDistResNet"),
                  GenerateScenarioDistResNet(
-                     lstN          = rep(list(n), K),
-                     lstAlphas     = rep(list(c(alpha0, alphaX)), K),
-                     lstBetas      = rep(list(c(beta0, betaX, betaA, betaXA)), K),
+                     lstN = rep(list(n), K),
+                     lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
+                     lstAlphas = rep(list(c(alpha0, alphaX)), K),
+                     lstBetas = rep(list(c(beta0, betaX, betaA, betaXA)), K),
                      lstSurvParams = rep(list(survParams), K)))
 
     ## print method
@@ -488,23 +503,27 @@ test_that("Multiple centers are generated correctly", {
     ##  with parameters
     lstParamsTableOne2 <- summary(lstDf, truth = TRUE)
     expect_true(!is.null(lstParamsTableOne2[[1]]$params))
-    expect_true(all(sapply(lapply(lstParamsTableOne2, "[[", "params"), length) == 4))
+    expect_true(all(sapply(lapply(lstParamsTableOne2, "[[", "params"), length) == 5))
 
     ## If not all arguments have the same length, an error arises
     expect_error(GenerateDistResNet(lstN          = rep(list(n), K),
+                                    lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
                                     lstAlphas     = rep(list(c(alpha0, alphaX)), K),
                                     lstBetas      = rep(list(c(beta0, betaX, betaA, betaXA)), K-1),
                                     lstSurvParams = rep(list(survParams), K)))
     ## Inconsistent parameter length gives an error
     expect_error(GenerateDistResNet(lstN          = rep(list(n), K),
+                                    lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
                                     lstAlphas     = rep(list(c(alpha0, alphaX[-1])), K),
                                     lstBetas      = rep(list(c(beta0, betaX, betaA, betaXA)), K),
                                     lstSurvParams = rep(list(survParams), K)))
     expect_error(GenerateDistResNet(lstN          = rep(list(n), K),
+                                    lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
                                     lstAlphas     = rep(list(c(alpha0, alphaX)), K),
                                     lstBetas      = rep(list(c(beta0, betaX[-1], betaA, betaXA)), K),
                                     lstSurvParams = rep(list(survParams), K)))
     expect_error(GenerateDistResNet(lstN          = rep(list(n), K),
+                                    lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
                                     lstAlphas     = rep(list(c(alpha0, alphaX)), K),
                                     lstBetas      = rep(list(c(beta0, betaX, betaA, betaXA[-1])), K),
                                     lstSurvParams = rep(list(survParams), K)))
@@ -519,6 +538,10 @@ test_that("a single scenario dataset is generated correctly", {
 
     ScenarioDistResNet <-
         GenerateScenarioDistResNet(list(1, 2, 3, 4),
+                                   list(AssignCovariatesNormBinDefault,
+                                        AssignCovariatesNormBinDefault,
+                                        AssignCovariatesNormBinDefault,
+                                        AssignCovariatesNormBinDefault),
                                    list(c(0.1, -seq_len(7)),
                                         c(0.2, -seq_len(7)),
                                         c(0.3, -seq_len(7)),
@@ -562,22 +585,26 @@ test_that("a single scenario dataset is generated correctly", {
     ## If not all arguments have the same length, an error arises
     expect_error(GenerateScenarioDistResNet(
         lstN          = rep(list(n), K),
+        lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
         lstAlphas     = rep(list(c(alpha0, alphaX)), K),
         lstBetas      = rep(list(c(beta0, betaX, betaA, betaXA)), K-1),
         lstSurvParams = rep(list(survParams), K)))
     ## Inconsistent parameter length gives an error
     expect_error(GenerateScenarioDistResNet(
         lstN          = rep(list(n), K),
+        lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
         lstAlphas     = rep(list(c(alpha0, alphaX[-1])), K),
         lstBetas      = rep(list(c(beta0, betaX, betaA, betaXA)), K),
         lstSurvParams = rep(list(survParams), K)))
     expect_error(GenerateScenarioDistResNet(
         lstN          = rep(list(n), K),
+        lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
         lstAlphas     = rep(list(c(alpha0, alphaX)), K),
         lstBetas      = rep(list(c(beta0, betaX[-1], betaA, betaXA)), K),
         lstSurvParams = rep(list(survParams), K)))
     expect_error(GenerateScenarioDistResNet(
         lstN          = rep(list(n), K),
+        lstAssignCovariates = rep(list(AssignCovariatesNormBinDefault), K),
         lstAlphas     = rep(list(c(alpha0, alphaX)), K),
         lstBetas      = rep(list(c(beta0, betaX, betaA, betaXA[-1])), K),
         lstSurvParams = rep(list(survParams), K)))
@@ -587,6 +614,12 @@ test_that("a single scenario dataset is generated correctly", {
 ## Create size set
 ## List of K scalars indicating site sample sizes
 lstNBase <- list(10^5,2*10^4,2*10^4,5*10^3)
+
+## Create covariate generator set
+lstAssignCovariates = list(AssignCovariatesNormBinDefault,
+                           AssignCovariatesNormBinDefault,
+                           AssignCovariatesNormBinDefault,
+                           AssignCovariatesNormBinDefault)
 
 ## Create treatment model coefficient sets
 ## List of K vectors
@@ -624,6 +657,7 @@ lstSurvParamsAlt1 <- list(c(1/2, 1/2, 1),
 
 ## Actually generate scenarios (mixing)
 Scenarios <- GenerateScenarios(lstLstN          = list(lstNBase),
+                               lstLstAssignCovariates = list(lstAssignCovariates),
                                lstLstAlphas     = list(lstAlphasBase,
                                                        lstAlphasAlt1),
                                lstLstBetas      = list(lstBetasBase,
@@ -637,6 +671,8 @@ print(Scenarios)
 ## Actually generate scenarios (no mixing)
 ScenariosNoMix <- GenerateScenarios(lstLstN          = list(lstNBase,
                                                             lstNBase),
+                                    lstLstAssignCovariates = list(lstAssignCovariates,
+                                                                  lstAssignCovariates),
                                     lstLstAlphas     = list(lstAlphasBase,
                                                             lstAlphasAlt1),
                                     lstLstBetas      = list(lstBetasBase,
@@ -659,8 +695,8 @@ test_that("Scenarios are generated correctly with all possible combinations", {
     ## Number of scenarios should be
     expect_true(length(Scenarios) == 1*2*2*2)
 
-    ## 4 list elements (N, Alphas, Betas, SurvParams) for each scenario
-    expect_true(unique(sapply(Scenarios, length)) == 4)
+    ## 5 list elements (N, AssignCovariates, Alphas, Betas, SurvParams) for each scenario
+    expect_true(unique(sapply(Scenarios, length)) == 5)
 
     ## All scenarios here have four centers
     expect_true(all(sapply(Scenarios, sapply,
@@ -682,8 +718,8 @@ test_that("Scenarios are generated correctly without combinations", {
     ## Number of scenarios should be
     expect_true(length(ScenariosNoMix) == 2)
 
-    ## 4 list elements (N, Alphas, Betas, SurvParams) for each scenario
-    expect_true(unique(sapply(ScenariosNoMix, length)) == 4)
+    ## 4 list elements (N, AssignCovariates, Alphas, Betas, SurvParams) for each scenario
+    expect_true(unique(sapply(ScenariosNoMix, length)) == 5)
 
     ## All scenarios here have four centers
     expect_true(all(sapply(ScenariosNoMix, sapply,
@@ -691,10 +727,12 @@ test_that("Scenarios are generated correctly without combinations", {
 
     ## This equality should hold
     scenario1 <- GenerateScenarioDistResNet(lstNBase,
+                                            lstAssignCovariates,
                                             lstAlphasBase,
                                             lstBetasBase,
                                             lstSurvParamsBase)
     scenario2 <- GenerateScenarioDistResNet(lstNBase,
+                                            lstAssignCovariates,
                                             lstAlphasAlt1,
                                             lstBetasAlt1,
                                             lstSurvParamsAlt1)
@@ -709,9 +747,10 @@ test_that("Scenarios are generated correctly without combinations", {
 TestOneScenarioGen <- function(scenarioParams, lstNBase) {
     ## Realize data for the first scenario
     DistResNet <- GenerateDistResNet(lstN          = scenarioParams[[1]],
-                                     lstAlphas     = scenarioParams[[2]],
-                                     lstBetas      = scenarioParams[[3]],
-                                     lstSurvParams = scenarioParams[[4]])
+                                     lstAssignCovariates = scenarioParams[[2]],
+                                     lstAlphas     = scenarioParams[[3]],
+                                     lstBetas      = scenarioParams[[4]],
+                                     lstSurvParams = scenarioParams[[5]])
     ## DistResNet containing ResSite
     expect_true("DistResNet" %in% class(DistResNet))
     expect_true(all("ResSite" %in% sapply(DistResNet, class)))

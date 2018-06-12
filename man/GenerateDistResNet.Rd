@@ -4,10 +4,13 @@
 \alias{GenerateDistResNet}
 \title{Generate a distributed research network.}
 \usage{
-GenerateDistResNet(lstN, lstAlphas, lstBetas, lstSurvParams)
+GenerateDistResNet(lstN, lstAssignCovariates, lstAlphas, lstBetas,
+  lstSurvParams)
 }
 \arguments{
 \item{lstN}{list of sizes of centers. Number of centers (K) is also determined by its length.}
+
+\item{lstAssignCovariates}{list of covariate generation functions that takes n and p as the only arguments.}
 
 \item{lstAlphas}{list of alpha vectors potentially varying among centers. See \code{\link{GenerateOneCenter}} for construction of an alpha vector.}
 

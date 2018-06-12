@@ -4,10 +4,12 @@
 \alias{GenerateOneCenterTable}
 \title{Generate one data center and its table}
 \usage{
-GenerateOneCenterTable(n, alphas, betas, survParams, ...)
+GenerateOneCenterTable(n, AssignCovariates, alphas, betas, survParams, ...)
 }
 \arguments{
 \item{n}{study site-specific sample size}
+
+\item{AssignCovariates}{covariate generation functions that takes n and p as the only arguments.}
 
 \item{alphas}{parameter vector for treatment model including c(alpha0, alphaX)}
 

@@ -13,7 +13,7 @@
 ## First one is a continuous and modeled after an age variable.
 ## The others emulate baseline comorbidities of varying frequencies.
 
-##' Create indepedent covariates
+##' Create indepedent covariates given mean, sd, and prevalence
 ##'
 ##' The first covariate is a Normal(mean1, sd1) random variable, whereas the other
 ##' covariates are Bernoulli(p) random variables where p's are specified by the
@@ -24,12 +24,12 @@
 ##' @param sd1 sd for first continuous normal covariate
 ##' @param pp vector of prevalences for other Bernoulli covariates
 ##'
-##' @return n x 8 data frame including ID and covariates
+##' @return n x (m+1) data frame including ID and m covariates
 ##'
 ##' @author Kazuki Yoshida
 ##'
 ##' @export
-AssignCovariates <- function(n, mean1, sd1, pp) {
+AssignCovariatesNormBin <- function(n, mean1, sd1, pp) {
     ## ID
     id <- seq_len(n)
     ## One continuous covariate
@@ -43,6 +43,49 @@ AssignCovariates <- function(n, mean1, sd1, pp) {
     names(Xs) <- paste0("X", seq_along(pp) + 1)
     ## Return as a data frame
     cbind(out, do.call(cbind, Xs))
+}
+
+##' Create independent covariates by default method
+##'
+##' The first covariate is a Normal(0,1) random variable, whereas the other covariates are Bernoulli(p) random variables where p's are specified by the elements of the pp vector.
+##'
+##' @param n number of individuals to create
+##' @param p number of covariates
+##'
+##' @return n x (p+1) data frame including ID and p covariates
+##'
+##' @author Kazuki Yoshida
+##'
+##' @export
+AssignCovariatesNormBinDefault <- function(n, p) {
+    ## Probabilities for binary covariates (1st is continuous, thus, 1 fewer)
+    ## Range probabilities from 0.05 to 0.50
+    mean1 <- 0
+    sd1 <- 1
+    pp <- seq(from = 0.05, to = 0.50, length.out = (p - 1))
+    AssignCovariatesNormBin(n, mean1 = mean1, sd1 = sd1, pp = pp)
+}
+
+##' Construct independent covariate generator
+##'
+##' Construct an independent covariate generator that generates the first covariate as Normal(mean1,sd1) random variable, whereas the other covariates are Bernoulli(p) random variables where p's are specified by equal interval sequence of (p2, ..., pp)
+##'
+##' @param mean1 mean for first continuous normal covariate
+##' @param sd1 sd for first continuous normal covariate
+##' @param p2 prevalence of binary X2
+##' @param pLast prevalence of binary Xlast
+##'
+##' @return covariate generator that takes n and p as arguments
+##'
+##' @author Kazuki Yoshida
+##'
+##' @export
+ConstructAssignCovariatesNormBin <- function(mean1, sd1, p2, pLast) {
+    function(n, p) {
+        ## Probabilities for binary covariates (1st is continuous, thus, 1 fewer)
+        pVector <- seq(from = p2, to = pLast, length.out = (p - 1))
+        AssignCovariatesNormBin(n, mean1 = mean1, sd1 = sd1, pp = pVector)
+    }
 }
 
 
@@ -262,6 +305,7 @@ DissectParams <- function(alphas, betas, survParams) {
 ##' Generate one data center with information of n patients. The parameters are given as four raw vectors. This function is intentionally designed to be a low level function working with raw numeric vector parameters for maximum flexibility. In actual simulation runs, this function should be called by \code{\link{GenerateDistResNet}}, not directly.
 ##'
 ##' @param n study site-specific sample size
+##' @param AssignCovariates covariate generation functions that takes n and p as the only arguments.
 ##' @param alphas parameter vector for treatment model including c(alpha0, alphaX)
 ##' @param betas parameter vector for outcome model shared among binary and survival outcome models including \code{c(beta0, betaX, betaA, betaXA)}.
 ##' @param survParams vector of two. The first element is the baseline hazard of events in the exponential event time outcome model (\code{lambda}). The second element is the baseline hazard of censoring in the exponential censoring time model (\code{lambda_c}).
@@ -271,7 +315,7 @@ DissectParams <- function(alphas, betas, survParams) {
 ##' @author Kazuki Yoshida
 ##'
 ##' @export
-GenerateOneCenter <- function(n, alphas, betas, survParams) {
+GenerateOneCenter <- function(n, AssignCovariates, alphas, betas, survParams) {
     ## All arguments are numeric
     assert_that(is.numeric(n) & is.numeric(alphas) & is.numeric(betas) & is.numeric(survParams))
     ## Sample size is a scalar
@@ -295,12 +339,8 @@ GenerateOneCenter <- function(n, alphas, betas, survParams) {
     assert_that(length(params$alphaX) == length(params$betaX))
 
     ## Generate dataset
-    ## Probabilities for binary covariates (1st is continuous, thus, 1 fewer)
-    ## Range probabilities from 0.05 to 0.50
-    pp <- seq(from = 0.05, to = 0.50, length.out = (p - 1))
     ## Covariates
-    out <- AssignCovariates(n = n, mean1 = 0, sd1 = 1,
-                            pp = pp) %>%
+    out <- AssignCovariates(n = n, p = p) %>%
         ## Treatment A
         AssignTreatment(dfX        = .,
                         alpha0     = params$alpha0,
@@ -327,9 +367,10 @@ GenerateOneCenter <- function(n, alphas, betas, survParams) {
     assert_that(names(out)[1] == "id")
     ## Keep parameters as attributes for peeking the truth
     attr(out, which = "ScenarioResSite") <-
-        list(n          = n,
-             alphas     = alphas,
-             betas      = betas,
+        list(n = n,
+             AssignCovariates = AssignCovariates,
+             alphas = alphas,
+             betas = betas,
              survParams = survParams)
     ## Add class Research Site
     class(out) <- c("ResSite", class(out))
@@ -416,9 +457,9 @@ summary.ResSite <- function(x, truth = FALSE, ...) {
 ##' @author Kazuki Yoshida
 ##'
 ##' @export
-GenerateOneCenterTable <- function(n, alphas, betas, survParams, ...) {
+GenerateOneCenterTable <- function(n, AssignCovariates, alphas, betas, survParams, ...) {
     ## Generate one center
-    ResSite <- GenerateOneCenter(n = n, alphas = alphas, betas = betas, survParams = survParams)
+    ResSite <- GenerateOneCenter(n = n, AssignCovariates = AssignCovariates, alphas = alphas, betas = betas, survParams = survParams)
 
     ## Just call summary method for a ParamsTableOne object
     summary(ResSite, truth = TRUE)
@@ -486,6 +527,7 @@ print.ParamsTableOne <- function(x, print = TRUE, ...) {
 ##' Generate a distributed research network of K sites.
 ##'
 ##' @param lstN list of sizes of centers. Number of centers (K) is also determined by its length.
+##' @param lstAssignCovariates list of covariate generation functions that takes n and p as the only arguments.
 ##' @param lstAlphas list of alpha vectors potentially varying among centers. See \code{\link{GenerateOneCenter}} for construction of an alpha vector.
 ##' @param lstBetas list of beta vectors potentially varying among centers. See \code{\link{GenerateOneCenter}} for construction of a beta vector.
 ##' @param lstSurvParams list of survival outcome parameters potentially varying among centers.
@@ -495,28 +537,28 @@ print.ParamsTableOne <- function(x, print = TRUE, ...) {
 ##' @author Kazuki Yoshida
 ##'
 ##' @export
-GenerateDistResNet <- function(lstN, lstAlphas, lstBetas, lstSurvParams) {
+GenerateDistResNet <- function(lstN, lstAssignCovariates, lstAlphas, lstBetas, lstSurvParams) {
 
     ## Check for same lengths
-    assert_that(all(length(lstN) == sapply(list(lstAlphas, lstBetas, lstSurvParams), length)))
+    assert_that(all(length(lstN) == sapply(list(lstAssignCovariates, lstAlphas, lstBetas, lstSurvParams), length)))
 
     out <- mapply(FUN = GenerateOneCenter,
-
                   ## vector or list of parameters
                   ## i-th elements from all of them are fed to FUN
                   lstN,
+                  lstAssignCovariates,
                   lstAlphas,
                   lstBetas,
                   lstSurvParams,
-
                   ## Return as a list
                   SIMPLIFY = FALSE)
 
     ## Keep parameters as an attribute
     attr(out, which = "ScenarioDistResNet") <-
-        GenerateScenarioDistResNet(lstN          = lstN,
-                                   lstAlphas     = lstAlphas,
-                                   lstBetas      = lstBetas,
+        GenerateScenarioDistResNet(lstN = lstN,
+                                   lstAssignCovariates = lstAssignCovariates,
+                                   lstAlphas = lstAlphas,
+                                   lstBetas = lstBetas,
                                    lstSurvParams = lstSurvParams)
     ## Give site names
     names(out) <- paste0("site", seq_along(out))
@@ -584,6 +626,7 @@ summary.DistResNet <- function(x, truth = FALSE, ...) {
 ##' Generate a ScenarioDistResNet object, a set of parameters specifying a distributed research network data generation. The number of sites are implied by the length of parameters (K).
 ##'
 ##' @param lstN list of K sample sizes
+##' @param lstAssignCovariates list of covariate generation functions that takes n and p as the only arguments.
 ##' @param lstAlphas list of K vectors, each of which specifies alpha parameters for the treatment assignment model.
 ##' @param lstBetas list of K vectors, each of which specifies beta parameters for the outcome assignment model.
 ##' @param lstSurvParams list of K vectors, each of which specifies survival parameters.
@@ -593,15 +636,16 @@ summary.DistResNet <- function(x, truth = FALSE, ...) {
 ##' @author Kazuki Yoshida
 ##'
 ##' @export
-GenerateScenarioDistResNet <- function(lstN, lstAlphas, lstBetas, lstSurvParams) {
+GenerateScenarioDistResNet <- function(lstN, lstAssignCovariates, lstAlphas, lstBetas, lstSurvParams) {
     ## All arguments must be lists.
-    assert_that(class(lstN)          == "list")
-    assert_that(class(lstAlphas)     == "list")
-    assert_that(class(lstBetas)      == "list")
+    assert_that(class(lstN) == "list")
+    assert_that(class(lstAssignCovariates) == "list")
+    assert_that(class(lstAlphas) == "list")
+    assert_that(class(lstBetas) == "list")
     assert_that(class(lstSurvParams) == "list")
 
     ## They all have to have the same length
-    site_count_K <- unique(sapply(list(lstN, lstAlphas, lstBetas, lstSurvParams), length))
+    site_count_K <- unique(sapply(list(lstN, lstAssignCovariates, lstAlphas, lstBetas, lstSurvParams), length))
     assert_that(length(site_count_K) == 1)
 
     ## In each site, betas are twice as long as alphas
@@ -610,9 +654,10 @@ GenerateScenarioDistResNet <- function(lstN, lstAlphas, lstBetas, lstSurvParams)
     }
 
     ## Combine them in a list
-    out <- list(lstN          = lstN,
-                lstAlphas     = lstAlphas,
-                lstBetas      = lstBetas,
+    out <- list(lstN = lstN,
+                lstAssignCovariates = lstAssignCovariates,
+                lstAlphas = lstAlphas,
+                lstBetas = lstBetas,
                 lstSurvParams = lstSurvParams)
 
     ## Add correct class
@@ -625,6 +670,7 @@ GenerateScenarioDistResNet <- function(lstN, lstAlphas, lstBetas, lstSurvParams)
 ##' Generate a Scenario object, a list of ScenarioDistResNet objects, each of which corresponds to one simulation scenario by combining the possible values given.
 ##'
 ##' @param lstLstN list of lists of sample sizes
+##' @param lstLstAlphas list of lists of covariate generating functions
 ##' @param lstLstAlphas list of lists of alpha parameters
 ##' @param lstLstBetas list of lists of beta parameters
 ##' @param lstLstSurvParams list of lists of survival parameters
@@ -635,32 +681,36 @@ GenerateScenarioDistResNet <- function(lstN, lstAlphas, lstBetas, lstSurvParams)
 ##' @author Kazuki Yoshida
 ##'
 ##' @export
-GenerateScenarios <- function(lstLstN, lstLstAlphas, lstLstBetas, lstLstSurvParams, mix) {
+GenerateScenarios <- function(lstLstN, lstLstAssignCovariates, lstLstAlphas, lstLstBetas, lstLstSurvParams, mix) {
 
     ## All of arguments must be lists.
-    assert_that(class(lstLstN)          == "list")
-    assert_that(class(lstLstAlphas)     == "list")
-    assert_that(class(lstLstBetas)      == "list")
+    assert_that(class(lstLstN) == "list")
+    assert_that(class(lstLstAssignCovariates) == "list")
+    assert_that(class(lstLstAlphas) == "list")
+    assert_that(class(lstLstBetas) == "list")
     assert_that(class(lstLstSurvParams) == "list")
 
     ## All list elements are also lists.
-    assert_that(unique(unlist(lapply(lstLstN,          class))) == "list")
-    assert_that(unique(unlist(lapply(lstLstAlphas,     class))) == "list")
-    assert_that(unique(unlist(lapply(lstLstBetas,      class))) == "list")
+    assert_that(unique(unlist(lapply(lstLstN, class))) == "list")
+    assert_that(unique(unlist(lapply(lstLstAssignCovariates, class))) == "list")
+    assert_that(unique(unlist(lapply(lstLstAlphas, class))) == "list")
+    assert_that(unique(unlist(lapply(lstLstBetas, class))) == "list")
     assert_that(unique(unlist(lapply(lstLstSurvParams, class))) == "list")
 
     ## All list elements are of the same length
-    lengthLstN          <- unique(unlist(lapply(lstLstN,          length)))
-    lengthLstAlphas     <- unique(unlist(lapply(lstLstAlphas,     length)))
-    lengthLstBetas      <- unique(unlist(lapply(lstLstBetas,      length)))
+    lengthLstN <- unique(unlist(lapply(lstLstN, length)))
+    lengthLstAlphas <- unique(unlist(lapply(lstLstAlphas, length)))
+    lengthLstAssignCovariates <- unique(unlist(lapply(lstLstAssignCovariates, length)))
+    lengthLstBetas <- unique(unlist(lapply(lstLstBetas, length)))
     lengthLstSurvParams <- unique(unlist(lapply(lstLstSurvParams, length)))
+    assert_that(identical(lengthLstN, lengthLstAssignCovariates))
     assert_that(identical(lengthLstN, lengthLstAlphas))
     assert_that(identical(lengthLstN, lengthLstBetas))
     assert_that(identical(lengthLstN, lengthLstSurvParams))
 
     ## If not mixing, all parameter set arguments must be of the same lengths.
     if (mix == FALSE) {
-        len_args <- sapply(list(lstLstN, lstLstAlphas, lstLstBetas, lstLstSurvParams),
+        len_args <- sapply(list(lstLstN, lstLstAssignCovariates, lstLstAlphas, lstLstBetas, lstLstSurvParams),
                            length)
         assert_that(length(unique(len_args)) == 1)
     }
@@ -668,9 +718,10 @@ GenerateScenarios <- function(lstLstN, lstLstAlphas, lstLstBetas, lstLstSurvPara
     if (mix) {
         ## If mixing, use the expand.grid technique to obtain all possible combinations.
         ## Make sure this ordring is the same as GenData arguments
-        outGrid <- expand.grid(lstLstN          = lstLstN,
-                               lstLstAlphas     = lstLstAlphas,
-                               lstLstBetas      = lstLstBetas,
+        outGrid <- expand.grid(lstLstN = lstLstN,
+                               lstLstAssignCovariates = lstLstAssignCovariates,
+                               lstLstAlphas = lstLstAlphas,
+                               lstLstBetas = lstLstBetas,
                                lstLstSurvParams = lstLstSurvParams)
 
         ## Create a list of ScenarioDistResNet objects
@@ -679,10 +730,11 @@ GenerateScenarios <- function(lstLstN, lstLstAlphas, lstLstBetas, lstLstSurvPara
             lstOut <- lapply(outGrid[i,], "[[", 1)
 
             ## Construct a scenario for a single distributed research network
-            out <- GenerateScenarioDistResNet(lstN          = lstOut[[1]],
-                                              lstAlphas     = lstOut[[2]],
-                                              lstBetas      = lstOut[[3]],
-                                              lstSurvParams = lstOut[[4]])
+            out <- GenerateScenarioDistResNet(lstN = lstOut[[1]],
+                                              lstAssignCovariates = lstOut[[2]],
+                                              lstAlphas = lstOut[[3]],
+                                              lstBetas = lstOut[[4]],
+                                              lstSurvParams = lstOut[[5]])
             out
         })
 
@@ -690,6 +742,7 @@ GenerateScenarios <- function(lstLstN, lstLstAlphas, lstLstBetas, lstLstSurvPara
         ## If not mixing just take one by one
         lstScenarios <- mapply(FUN = GenerateScenarioDistResNet,
                                lstLstN,
+                               lstLstAssignCovariates,
                                lstLstAlphas,
                                lstLstBetas,
                                lstLstSurvParams,
@@ -716,19 +769,19 @@ GenerateScenarios <- function(lstLstN, lstLstAlphas, lstLstBetas, lstLstSurvPara
 ##' @export
 print.ScenarioDistResNet <- function(x, ...) {
     cat("### Scenario for a distributed research network.\n")
-    cat("###", length(x[[1]]), "sites are included.\n")
+    cat("###", length(x$lstN), "sites are included.\n")
 
     cat("### Sample sizes\n")
-    for (elt in x[[1]]) {
+    for (elt in x$lstN) {
         cat(elt, "\n")
     }
 
     ## Number of covariates
-    nCovs <- length(x[[2]][[1]]) - 1
+    nCovs <- length(x$lstAlphas[[1]]) - 1
 
     cat("### Alpha parameters (treatment model)\n")
     cat("### Intercept ; Covariates\n")
-    for (elt in x[[2]]) {
+    for (elt in x$lstAlphas) {
         cat(elt[1],
             ";",
             elt[-1],
@@ -737,7 +790,7 @@ print.ScenarioDistResNet <- function(x, ...) {
 
     cat("### Beta parameters (outcome model)\n")
     cat("### Intercept ; Covariates ; Treatment ; Interactions\n")
-    for (elt in x[[3]]) {
+    for (elt in x$lstBetas) {
         cat(elt[1],
             ";",
             elt[1 + seq_len(nCovs)],
@@ -750,7 +803,7 @@ print.ScenarioDistResNet <- function(x, ...) {
 
     cat("### Survival parameters (survival outcome only)\n")
     cat("### Event rate ; Censoring rate ; Administrative censoring\n")
-    for (elt in x[[4]]) {
+    for (elt in x$lstSurvParams) {
         cat(elt, "\n")
     }
     cat("\n")
@@ -827,10 +880,11 @@ GenerateDistResNetRtimesAndSave <- function(ScenarioDistResNet, R, scenarioCount
     lstIter <- lapply(seq_len(R), function(i) {
 
         ## Generate a distributed research network object
-        DistResNet <- GenerateDistResNet(lstN            = ScenarioDistResNet[[1]],
-                                         lstAlphas       = ScenarioDistResNet[[2]],
-                                         lstBetas        = ScenarioDistResNet[[3]],
-                                         lstSurvParams   = ScenarioDistResNet[[4]])
+        DistResNet <- GenerateDistResNet(lstN = ScenarioDistResNet[[1]],
+                                         lstAssignCovariates = ScenarioDistResNet[[2]],
+                                         lstAlphas = ScenarioDistResNet[[3]],
+                                         lstBetas = ScenarioDistResNet[[4]],
+                                         lstSurvParams = ScenarioDistResNet[[5]])
         DistResNet
     })
 

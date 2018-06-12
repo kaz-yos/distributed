@@ -1,3 +1,19 @@
+distributed 0.3.0 (2018-06-12)
+----------------------------------------------------------------
+
+CHANGES
+* This version corresponds to the publication.
+* Varying covariate distributions across sites is possible.
+
+
+distributed 0.2.0 (2018-02-26)
+----------------------------------------------------------------
+
+CHANGES
+* Counterfactual results are calculated with each adjustment
+  method using individual-level data.
+
+
 distributed 0.1.0 (2017-01-27)
 ----------------------------------------------------------------
 

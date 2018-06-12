@@ -1177,44 +1177,83 @@ AnalyzeSiteDataset <- function(x) {
 ##'
 ##' @author Kazuki Yoshida
 AnalyzeSiteTruthBin <- function(x) {
-
     ## Binary
-    ## Use counterfactual binary outcome Y_ and intervened treatment A_
-    ## Causal effect in the entire sample stratified on sites
-    tAllE      <- try(clogit(formula = Y_ ~ A_ + strata(site),
-                             data    = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
-                             method  = c("exact", "approximate", "efron", "breslow")[3]))
-    ## Causal effect in the treated sub-sample stratified on sites
-    tTreatedE  <- try(clogit(formula = Y_ ~ A_ + strata(site),
+    ## Unadjusted stratified by sites
+    unadjE       <- try(clogit(formula = Y_ ~ A_ + strata(site),
+                               data    = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[3]))
+    ## Matched cohort stratified by sites
+    ePsMatchE    <- try(clogit(formula = Y_ ~ A_ + strata(site),
+                               data    = ValidateDf(x[x$ePsMatch == 1,], expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[3]))
+    eDrsBMatchE  <- try(clogit(formula = Y_ ~ A_ + strata(site),
+                               data    = ValidateDf(x[x$eDrsBMatch == 1,], expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[3]))
+    ## Stratified analysis stratified by summary score strata and sites
+    ePsStrataE   <- try(clogit(formula = Y_ ~ A_ + strata(site, ePsStrata),
+                               data    = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[3]))
+    eDrsBStrataE <- try(clogit(formula = Y_ ~ A_ + strata(site, eDrsBStrata),
+                               data    = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[3]))
+    ## Weighted analysis stratified by sites
+    ePsSIptwE    <- try(svycoxph(formula = Surv(rep(1, length(Y_)), Y_) ~ A_ + strata(site),
+                                 design  = svydesign(ids = ~ 1,
+                                                     data = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                                                     weights = ~ ePsSIptw),
+                                 method  = c("exact", "approximate", "efron", "breslow")[3]))
+    ePsMwE       <- try(svycoxph(formula = Surv(rep(1, length(Y_)), Y_) ~ A_ + strata(site),
+                                 design  = svydesign(ids = ~ 1,
+                                                     data = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                                                     weights = ~ ePsMw),
+                                 method  = c("exact", "approximate", "efron", "breslow")[3]))
 
-                             data    = ValidateDf(x[x$A == 1,], expo_var = "A_", event_var = "Y_"),
-                             method  = c("exact", "approximate", "efron", "breslow")[3]))
-    ## Causal effect in the untreated sub-sample stratified on sites
-    tUntreatedE <- try(clogit(formula = Y_ ~ A_ + strata(site),
-                              data    = ValidateDf(x[x$A == 0,], expo_var = "A_", event_var = "Y_"),
-                              method  = c("exact", "approximate", "efron", "breslow")[3]))
     ## Breslow
-    ## Causal effect in the entire sample stratified on sites
-    tAllB      <- try(clogit(formula = Y_ ~ A_ + strata(site),
-                             data    = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
-                             method  = c("exact", "approximate", "efron", "breslow")[4]))
-    ## Causal effect in the treated sub-sample stratified on sites
-    tTreatedB  <- try(clogit(formula = Y_ ~ A_ + strata(site),
+    ## Unadjusted stratified by sites
+    unadjB       <- try(clogit(formula = Y_ ~ A_ + strata(site),
+                               data    = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[4]))
+    ## Matched cohort stratified by sites
+    ePsMatchB    <- try(clogit(formula = Y_ ~ A_ + strata(site),
+                               data    = ValidateDf(x[x$ePsMatch == 1,], expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[4]))
+    eDrsBMatchB  <- try(clogit(formula = Y_ ~ A_ + strata(site),
+                               data    = ValidateDf(x[x$eDrsBMatch == 1,], expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[4]))
+    ## Stratified analysis stratified by summary score strata and sites
+    ePsStrataB   <- try(clogit(formula = Y_ ~ A_ + strata(site, ePsStrata),
+                               data    = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[4]))
+    eDrsBStrataB <- try(clogit(formula = Y_ ~ A_ + strata(site, eDrsBStrata),
+                               data    = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                               method  = c("exact", "approximate", "efron", "breslow")[4]))
+    ## Weighted analysis stratified by sites
+    ePsSIptwB    <- try(svycoxph(formula = Surv(rep(1, length(Y_)), Y_) ~ A_ + strata(site),
+                                 design  = svydesign(ids = ~ 1,
+                                                     data = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                                                     weights = ~ ePsSIptw),
+                                 method  = c("exact", "approximate", "efron", "breslow")[4]))
+    ePsMwB       <- try(svycoxph(formula = Surv(rep(1, length(Y_)), Y_) ~ A_ + strata(site),
+                                 design  = svydesign(ids = ~ 1,
+                                                     data = ValidateDf(x, expo_var = "A_", event_var = "Y_"),
+                                                     weights = ~ ePsMw),
+                                 method  = c("exact", "approximate", "efron", "breslow")[4]))
 
-                             data    = ValidateDf(x[x$A == 1,], expo_var = "A_", event_var = "Y_"),
-                             method  = c("exact", "approximate", "efron", "breslow")[4]))
-    ## Causal effect in the untreated sub-sample stratified on sites
-    tUntreatedB <- try(clogit(formula = Y_ ~ A_ + strata(site),
-                              data    = ValidateDf(x[x$A == 0,], expo_var = "A_", event_var = "Y_"),
-                              method  = c("exact", "approximate", "efron", "breslow")[4]))
-
-    list(tAllE       = CoefVar(tAllE, "A_"),
-         tTreatedE   = CoefVar(tTreatedE, "A_"),
-         tUntreatedE = CoefVar(tUntreatedE, "A_"),
+    list(unadjE_true       = CoefVar(unadjE, "A_"),
+         ePsMatchE_true    = CoefVar(ePsMatchE, "A_"),
+         eDrsBMatchE_true  = CoefVar(eDrsBMatchE, "A_"),
+         ePsStrataE_true   = CoefVar(ePsStrataE, "A_"),
+         eDrsBStrataE_true = CoefVar(eDrsBStrataE, "A_"),
+         ePsSIptwE_true    = CoefVar(ePsSIptwE, "A_"),
+         ePsMwE_true       = CoefVar(ePsMwE, "A_"),
          ## Breslow
-         tAllB       = CoefVar(tAllB, "A_"),
-         tTreatedB   = CoefVar(tTreatedB, "A_"),
-         tUntreatedB = CoefVar(tUntreatedB, "A_"))
+         unadjB_true       = CoefVar(unadjB, "A_"),
+         ePsMatchB_true    = CoefVar(ePsMatchB, "A_"),
+         eDrsBMatchB_true  = CoefVar(eDrsBMatchB, "A_"),
+         ePsStrataB_true   = CoefVar(ePsStrataB, "A_"),
+         eDrsBStrataB_true = CoefVar(eDrsBStrataB, "A_"),
+         ePsSIptwB_true    = CoefVar(ePsSIptwB, "A_"),
+         ePsMwB_true       = CoefVar(ePsMwB, "A_"))
 }
 
 
@@ -1229,41 +1268,85 @@ AnalyzeSiteTruthBin <- function(x) {
 ##'
 ##' @author Kazuki Yoshida
 AnalyzeSiteTruthSurv <- function(x) {
-    ## Survival
-    ## Use counterfactual event time T_ and intervened treatment A_; event_ is all 1's.
-    ## Causal effect in the entire sample stratified on sites
-    tAllE      <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
-                            data    = ValidateDf(x, expo_var = "A_", event_var = "event_"),
-                            method  = c("exact", "approximate", "efron", "breslow")[3]))
-    ## Causal effect in the treated sub-sample stratified on sites
-    tTreatedE  <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
-                            data    = ValidateDf(x[x$A == 1,], expo_var = "A_", event_var = "event_"),
-                            method  = c("exact", "approximate", "efron", "breslow")[3]))
-    ## Causal effect in the untreated sub-sample stratified on sites
-    tUntreatedE <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
-                            data    = ValidateDf(x[x$A == 0,], expo_var = "A_", event_var = "event_"),
-                            method  = c("exact", "approximate", "efron", "breslow")[3]))
-    ## Breslow
-    ## Causal effect in the entire sample stratified on sites
-    tAllB      <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
-                            data    = ValidateDf(x, expo_var = "A_", event_var = "event_"),
-                            method  = c("exact", "approximate", "efron", "breslow")[4]))
-    ## Causal effect in the treated sub-sample stratified on sites
-    tTreatedB  <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
-                            data    = ValidateDf(x[x$A == 1,], expo_var = "A_", event_var = "event_"),
-                            method  = c("exact", "approximate", "efron", "breslow")[4]))
-    ## Causal effect in the untreated sub-sample stratified on sites
-    tUntreatedB <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
-                             data    = ValidateDf(x[x$A == 0,], expo_var = "A_", event_var = "event_"),
-                             method  = c("exact", "approximate", "efron", "breslow")[4]))
 
-    list(tAllE       = CoefVar(tAllE, "A_"),
-         tTreatedE   = CoefVar(tTreatedE, "A_"),
-         tUntreatedE = CoefVar(tUntreatedE, "A_"),
+    ## Survival
+    ## Unadjusted stratified by sites
+    unadjE       <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                              data    = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[3]))
+    ## Matched cohort stratified by sites
+    ePsMatchE    <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                              data    = ValidateDf(x[x$ePsMatch == 1,], expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[3]))
+    eDrsSMatchE  <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                              data    = ValidateDf(x[x$eDrsSMatch == 1,], expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[3]))
+    ## Stratified analysis stratified by summary score strata and sites
+    ePsStrataE   <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site, ePsStrata),
+                              data    = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[3]))
+    eDrsSStrataE <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site, eDrsSStrata),
+                              data    = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[3]))
+    ## Weighted analysis stratified by sites
+    ePsSIptwE    <- try(svycoxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                                 design  = svydesign(ids = ~ 1,
+                                                     data = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                                                     weights = ~ ePsSIptw),
+                                 method  = c("exact", "approximate", "efron", "breslow")[3]))
+    ePsMwE       <- try(svycoxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                                 design  = svydesign(ids = ~ 1,
+                                                     data = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                                                     weights = ~ ePsMw),
+                                 method  = c("exact", "approximate", "efron", "breslow")[3]))
+
+    ## Breslow
+    ## Unadjusted stratified by sites
+    unadjB       <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                              data    = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[4]))
+    ## Matched cohort stratified by sites
+    ePsMatchB    <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                              data    = ValidateDf(x[x$ePsMatch == 1,], expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[4]))
+    eDrsSMatchB  <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                              data    = ValidateDf(x[x$eDrsSMatch == 1,], expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[4]))
+    ## Stratified analysis stratified by summary score strata and sites
+    ePsStrataB   <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site, ePsStrata),
+                              data    = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[4]))
+    eDrsSStrataB <- try(coxph(formula = Surv(T_, event_) ~ A_ + strata(site, eDrsSStrata),
+                              data    = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                              method  = c("exact", "approximate", "efron", "breslow")[4]))
+    ## Weighted analysis stratified by sites
+    ePsSIptwB    <- try(svycoxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                                 design  = svydesign(ids = ~ 1,
+                                                     data = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                                                     weights = ~ ePsSIptw),
+                                 method  = c("exact", "approximate", "efron", "breslow")[4]))
+    ePsMwB       <- try(svycoxph(formula = Surv(T_, event_) ~ A_ + strata(site),
+                                 design  = svydesign(ids = ~ 1,
+                                                     data = ValidateDf(x, expo_var = "A_", event_var = "event_"),
+                                                     weights = ~ ePsMw),
+                                 method  = c("exact", "approximate", "efron", "breslow")[4]))
+
+    list(unadjE_true       = CoefVar(unadjE, "A_"),
+         ePsMatchE_true    = CoefVar(ePsMatchE, "A_"),
+         eDrsSMatchE_true  = CoefVar(eDrsSMatchE, "A_"),
+         ePsStrataE_true   = CoefVar(ePsStrataE, "A_"),
+         eDrsSStrataE_true = CoefVar(eDrsSStrataE, "A_"),
+         ePsSIptwE_true    = CoefVar(ePsSIptwE, "A_"),
+         ePsMwE_true       = CoefVar(ePsMwE, "A_"),
          ## Breslow
-         tAllB       = CoefVar(tAllB, "A_"),
-         tTreatedB   = CoefVar(tTreatedB, "A_"),
-         tUntreatedB = CoefVar(tUntreatedB, "A_"))
+         unadjB_true       = CoefVar(unadjB, "A_"),
+         ePsMatchB_true    = CoefVar(ePsMatchB, "A_"),
+         eDrsSMatchB_true  = CoefVar(eDrsSMatchB, "A_"),
+         ePsStrataB_true   = CoefVar(ePsStrataB, "A_"),
+         eDrsSStrataB_true = CoefVar(eDrsSStrataB, "A_"),
+         ePsSIptwB_true    = CoefVar(ePsSIptwB, "A_"),
+         ePsMwB_true       = CoefVar(ePsMwB, "A_"))
+
 }
 
 
@@ -1273,13 +1356,14 @@ AnalyzeSiteTruthSurv <- function(x) {
 ##' Analyze individual-level data collected from data centers. Summary score matched analyses, stratified analyses, and weighted analyses are conducted stratifying on sites.
 ##'
 ##' @param x data frame generated by \code{\link{RequestSiteTruth}}, containing all variable including latent ones (e.g., counterfactuals).
+##' @param Tmax scalar value defining the end of follow up. This must match the one used in the observed data generation to calculate the relevant marginal hazard ratios.
 ##'
 ##' @return data frame populated with point estimates and variance estimates by various methods.
 ##'
 ##' @author Kazuki Yoshida
 ##'
 ##' @export
-AnalyzeSiteTruth <- function(x) {
+AnalyzeSiteTruth <- function(x, Tmax = 1) {
 
     ##
     assert_that(is.data.frame(x))
@@ -1302,9 +1386,16 @@ AnalyzeSiteTruth <- function(x) {
     ## Realize survival outcome under each manipulated treatment
     x_A0$T_ <- rexp(n = seq_along(x_A0$rate0), rate = x_A0$rate0)
     x_A1$T_ <- rexp(n = seq_along(x_A1$rate1), rate = x_A1$rate1)
-    ## Everybody has observed survival time
-    x_A0$event_ <- 1
-    x_A1$event_ <- 1
+    ## Censor at Tmax
+    ##  Event variable 1 event, 0 censoring
+    x_A0$event_ <- as.numeric(x_A0$T_ <= Tmax)
+    x_A1$event_ <- as.numeric(x_A1$T_ <= Tmax)
+    ##  Set time to maximum follow up if administratively censored.
+    x_A0$T_ <- ifelse(x_A0$T_ <= Tmax, x_A0$T_, Tmax)
+    x_A1$T_ <- ifelse(x_A1$T_ <= Tmax, x_A1$T_, Tmax)
+    ##  Make day-level data, but do not discretize. This should not matter in Cox.
+    x_A0$T_ <- x_A0$T_ * 365.25
+    x_A1$T_ <- x_A1$T_ * 365.25
     ## Create a counterfactual dataset containing everybody twice under both treatment
     ## All manipulated or counterfactuals are marked with *_ variable names.
     x_counterfactual <- rbind(x_A0, x_A1)

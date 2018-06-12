@@ -4,10 +4,13 @@
 \alias{GenerateScenarioDistResNet}
 \title{Generate ScenarioDistResNet object containing parameters for a DRN.}
 \usage{
-GenerateScenarioDistResNet(lstN, lstAlphas, lstBetas, lstSurvParams)
+GenerateScenarioDistResNet(lstN, lstAssignCovariates, lstAlphas, lstBetas,
+  lstSurvParams)
 }
 \arguments{
 \item{lstN}{list of K sample sizes}
+
+\item{lstAssignCovariates}{list of covariate generation functions that takes n and p as the only arguments.}
 
 \item{lstAlphas}{list of K vectors, each of which specifies alpha parameters for the treatment assignment model.}
 
