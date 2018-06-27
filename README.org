@@ -6,7 +6,7 @@
 
 * Introduction
 
-In distributed data networks such as the Sentinel and PCORnet, minimizing the amount of data shared across data partners is important for reducing the danger of potential privacy breach. In this simulation project, we examined the performance of data analysis methods at various levels of data sharing such as meta-analysis, summary table data, risk set data, and individual-level data. The preliminary version of the results can be found in the [[https://pcornetcommons.org/wp-content/uploads/2018/01/Aim-2-Simulation-Studies-Presentation.pdf][presentation slides]].
+In distributed data networks such as the Sentinel and PCORnet, minimizing the amount of data shared across data partners is important for reducing the danger of potential privacy breach. In this simulation project, we examined the performance of data analysis methods at various levels of data sharing such as meta-analysis, summary table data, risk set data, and individual-level data. The preliminary version of the results can be found in the [[https://pcornetcommons.org/wp-content/uploads/2018/01/Aim-2-Simulation-Studies-Presentation.pdf][presentation slides]]. The final results are in the corresponding publication (/Pharmacoepidemiology and Drug Safety/ 2018 [in press]). More information of privacy-protecting analytic and data-sharing methods are available at [[https://www.distributedanalysis.org][www.distributedanalysis.org]].
 
 
 * System Requirement
